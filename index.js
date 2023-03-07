@@ -1,21 +1,18 @@
 const core = require('@actions/core');
-const wait = require('./wait');
+const {parse, applyDefaultType, toValidRef} = require('./lib');
 
+const ref = core.getInput('ref', {trimWhitespace: true});
+const defaultRefType = core.getInput('default-ref-type', {trimWhitespace: true});
 
-// most @actions toolkit packages have async methods
-async function run() {
-  try {
-    const ms = core.getInput('milliseconds');
-    core.info(`Waiting ${ms} milliseconds ...`);
+try {
+    let {refType, refName} = parse(ref);
+    refType = applyDefaultType(refType, refName, defaultRefType);
+    core.setOutput("ref-type", refType || '');
+    core.setOutput("ref-name", refName || '');
 
-    core.debug((new Date()).toTimeString()); // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-    await wait(parseInt(ms));
-    core.info((new Date()).toTimeString());
-
-    core.setOutput('time', new Date().toTimeString());
-  } catch (error) {
-    core.setFailed(error.message);
-  }
+    const fullRef = toValidRef(refType, refName);
+    core.setOutput("ref", fullRef || '');
+} catch (e) {
+    // There are no known error cases.
+    core.setFailed(e.message);
 }
-
-run();

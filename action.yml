@@ -1,13 +1,18 @@
-name: 'Wait'
-description: 'Wait a designated number of milliseconds'
+name: "parse-refname"
+description: "Parse a tag"
 inputs:
-  milliseconds:  # id of input
-    description: 'number of milliseconds to wait'
-    required: true
-    default: '1000'
+  ref:
+    description: "The refname."
+    required: false
+  default-ref-type:
+    description: "Ref type applied for shorthand refnames."
+    required: false
+    default: "tags"
 outputs:
-  time: # output will be available to future steps
-    description: 'The current time after waiting'
+  ref-type:
+    description: "The type/namespace of the ref."
+  ref-name:
+    description: "The ref with the 'refs/<type>/' prefix stripped."
 runs:
-  using: 'node16'
-  main: 'dist/index.js'
+  using: "node16"
+  main: "dist/index.js"

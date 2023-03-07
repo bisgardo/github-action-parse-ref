@@ -1,6 +1,52 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 909:
+/***/ ((module) => {
+
+function parse(ref) {
+    const refsPrefix = 'refs/';
+    if (!ref.startsWith(refsPrefix)) {
+        // The ref is a shorthand.
+        return {refType: null, refName: ref}
+    }
+    const typeBeginIdx = refsPrefix.length;
+    const typeEndIdx = ref.indexOf('/', typeBeginIdx);
+    if (typeEndIdx < 0) {
+        // 'ref' matches 'refs/<r>' where '<r>' has no slashes, making it a custom ref.
+        // We put the value in "type" for consistency with the result if the value had slashes in it.
+        return {refType: ref.substring(typeBeginIdx), refName: null};
+    }
+    return {refType: ref.substring(typeBeginIdx, typeEndIdx), refName: ref.substring(typeEndIdx + 1)}
+}
+
+function applyDefaultType(refType, refName, defaultRefType) {
+    if (refType === null && refName) {
+        return defaultRefType;
+    }
+    return refType;
+}
+
+function isValidRefName(n) {
+    return n && !(n.startsWith('/') || n.endsWith('/') || n.includes('//'));
+}
+
+function toValidRef(refType, refName) {
+    if (!refType || refName !== null && !isValidRefName(refName)) {
+        return null;
+    }
+    let res = `refs/${refType}`
+    if (refName) {
+        res += `/${refName}`
+    }
+    return res;
+}
+
+module.exports = {parse, applyDefaultType, toValidRef};
+
+
+/***/ }),
+
 /***/ 351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -2688,23 +2734,6 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 258:
-/***/ ((module) => {
-
-let wait = function (milliseconds) {
-  return new Promise((resolve) => {
-    if (typeof milliseconds !== 'number') {
-      throw new Error('milliseconds not a number');
-    }
-    setTimeout(() => resolve("done!"), milliseconds)
-  });
-};
-
-module.exports = wait;
-
-
-/***/ }),
-
 /***/ 491:
 /***/ ((module) => {
 
@@ -2835,26 +2864,23 @@ var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
 const core = __nccwpck_require__(186);
-const wait = __nccwpck_require__(258);
+const {parse, applyDefaultType, toValidRef} = __nccwpck_require__(909);
 
+const ref = core.getInput('ref', {trimWhitespace: true});
+const defaultRefType = core.getInput('default-ref-type', {trimWhitespace: true});
 
-// most @actions toolkit packages have async methods
-async function run() {
-  try {
-    const ms = core.getInput('milliseconds');
-    core.info(`Waiting ${ms} milliseconds ...`);
+try {
+    let {refType, refName} = parse(ref);
+    refType = applyDefaultType(refType, refName, defaultRefType);
+    core.setOutput("ref-type", refType || '');
+    core.setOutput("ref-name", refName || '');
 
-    core.debug((new Date()).toTimeString()); // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-    await wait(parseInt(ms));
-    core.info((new Date()).toTimeString());
-
-    core.setOutput('time', new Date().toTimeString());
-  } catch (error) {
-    core.setFailed(error.message);
-  }
+    const fullRef = toValidRef(refType, refName);
+    core.setOutput("ref", fullRef || '');
+} catch (e) {
+    // There are no known error cases.
+    core.setFailed(e.message);
 }
-
-run();
 
 })();
 

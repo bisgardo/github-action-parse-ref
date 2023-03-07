@@ -1,25 +1,26 @@
-name: "units-test"
+name: Test
 on:
   pull_request:
   push:
-    branches:
-      - main
-      - 'releases/*'
 
 jobs:
-  # unit tests
-  units:
+  unit_tests:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - run: npm ci
     - run: npm test
 
-  # test action works running from the graph
-  test:
+  apply:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: ./
+      id: my_step
       with:
-        milliseconds: 1000
+        ref: 'my_branch'
+        default-ref-type: 'heads'
+    - run: |
+        [ "${{steps.my_step.outputs.ref-type}}" = "heads" ]
+        [ "${{steps.my_step.outputs.ref-name}}" = "my_branch" ]
+        [ "${{steps.my_step.outputs.ref}}" = "refs/heads/my_branch" ]
