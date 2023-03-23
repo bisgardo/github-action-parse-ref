@@ -24,10 +24,15 @@ the shorthand ref `my_branch` and outputs the ref type, name, and full ref.
 
 A subsequent step prints all the output values to illustrate how the extracted group matches are accessed.
 
+An additional job `my_dependent_job` is defined to illustrate how to access the outputs from other jobs
+that `needs` the one containing the action.
+
 ```yaml
 jobs:
   my_job:
     runs-on: ubuntu-latest
+    outputs:
+      full-ref: "${{steps.my_step.outputs.ref}}"
     steps:
     - uses: bisgardo/github-action-parse-ref@v1
       id: my_step
@@ -38,4 +43,20 @@ jobs:
         echo "type: '${{steps.my_step.outputs.ref-type}}'"
         echo "name: '${{steps.my_step.outputs.ref-name}}'"
         echo "full ref: '${{steps.my_step.outputs.ref}}'"
+        
+  my_dependent_job:
+    runs-on: ubuntu-latest
+    needs: my_job
+    steps:
+      - run: |
+          echo "full-ref: ${{needs.my_job.outputs.full-ref}}"
 ```
+
+The parsed ref components are now available in subsequent steps of the job `my_job` as the template variables
+
+* `ref-type`: `${{steps.my_step.outputs.ref-type}}`
+* `ref-name`: `${{steps.my_step.outputs.ref-name}}`
+* `ref`: `${{steps.my_step.outputs.ref}}`
+
+Since we declared the [`output`](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) block in `my_job`,
+one of the variables (`ref`) is also exposed (as `full-ref`) to the dependent job `my_dependent_job`:
