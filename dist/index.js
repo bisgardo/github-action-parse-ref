@@ -27,6 +27,9 @@ function applyDefaultType(refType, refName, defaultRefType) {
     return refType;
 }
 
+// TODO Rename?
+// TODO Incorporate rules of 'https://git-scm.com/docs/git-check-ref-format#_description'
+//      to ensure that we catch all cases.
 function isValidRefName(n) {
     return n && !(n.startsWith('/') || n.endsWith('/') || n.includes('//'));
 }

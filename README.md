@@ -14,8 +14,8 @@ GitHub action for parsing a Git ref into its type and name.
 - `ref`: The fully resolved valid ref. Empty if ref is invalid.
 
 The action doesn't fail if the input ref is invalid.
-For example, the parsing will succeed if the ref is ending with a `/` which is invalid.
-The `ref` output can be used to detect invalid refs as it is always valid or empty.
+For example, the parsing will succeed if the ref ends with "/" which is invalid.
+The `ref` output can be used to detect if the input ref is invalid as it is always valid or empty.
 
 ## Example
 
@@ -27,7 +27,10 @@ A subsequent step prints all the output values to illustrate how the extracted g
 An additional job `my_dependent_job` is defined to illustrate how to access the outputs from other jobs
 that `needs` the one containing the action.
 
+The example uses the `ubuntu-latest` runner, but the action works on any type of machine.
+
 ```yaml
+...
 jobs:
   my_job:
     runs-on: ubuntu-latest
@@ -40,19 +43,19 @@ jobs:
         ref: 'my_branch'
         default-ref-type: 'heads'
     - run: |
-        echo "type: '${{steps.my_step.outputs.ref-type}}'"
-        echo "name: '${{steps.my_step.outputs.ref-name}}'"
-        echo "full ref: '${{steps.my_step.outputs.ref}}'"
+        echo "type: '${{steps.my_step.outputs.ref-type}}'"     # "type: heads"
+        echo "name: '${{steps.my_step.outputs.ref-name}}'"     # "name: my_branch"
+        echo "full ref: '${{steps.my_step.outputs.ref}}'"      # "full ref: refs/heads/my_branch"
         
   my_dependent_job:
     runs-on: ubuntu-latest
     needs: my_job
     steps:
       - run: |
-          echo "full-ref: ${{needs.my_job.outputs.full-ref}}"
+          echo "full ref: ${{needs.my_job.outputs.full-ref}}"  # "full ref: refs/heads/my_branch"
 ```
 
-The parsed ref components are now available in subsequent steps of the job `my_job` as the template variables
+The parsed ref components are available in subsequent steps of the job `my_job` as the template variables
 
 * `ref-type`: `${{steps.my_step.outputs.ref-type}}`
 * `ref-name`: `${{steps.my_step.outputs.ref-name}}`
@@ -60,3 +63,5 @@ The parsed ref components are now available in subsequent steps of the job `my_j
 
 Since we declared the [`output`](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) block in `my_job`,
 one of the variables (`ref`) is also exposed (as `full-ref`) to the dependent job `my_dependent_job`:
+
+* `full-ref`: `${{needs.my_job.outputs.full-ref}}`
